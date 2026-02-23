@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const data = {
   visitors: { today: 2847, week: 18432, trend: +12.4 },
@@ -29,17 +29,33 @@ const funnelSteps = [
 ];
 
 const journeyPaths = [
-  { path: "Quiz → Product → Contact → Insurance → Rx → Ship → Order", count: 218, pct: 60.4 },
-  { path: "Quiz → Product → Contact → Skip Insurance → Rx → Ship → Order", count: 87, pct: 24.1 },
-  { path: "Quiz → Product → Contact → Insurance → Rx → Back → Rx → Ship → Order", count: 31, pct: 8.6 },
-  { path: "Quiz → Product → Contact → Address Fail → Contact → … → Order", count: 18, pct: 5.0 },
-  { path: "Deep-link → Product → Contact → Insurance → Rx → Ship → Order", count: 7, pct: 1.9 },
+  { path: "Quiz Start → Product Selection → Contact Info → Insurance Upload → Product Review & Resupply Cadence → Shipping → Order", count: 218, pct: 60.4 },
+  { path: "Quiz Start → Product Selection → Contact Info → Skip Insurance → Product Review & Resupply Cadence → Shipping → Order", count: 87, pct: 24.1 },
+  { path: "Quiz Start → Product Selection → Contact Info → Insurance Upload → Product Review & Resupply Cadence → Back → Product Review & Resupply Cadence → Shipping → Order", count: 31, pct: 8.6 },
+  { path: "Quiz Start → Product Selection → Contact Info → Address Fail → Contact Info → … → Order", count: 18, pct: 5.0 },
+  { path: "Deep-link → Product Selection → Contact Info → Insurance Upload → Product Review & Resupply Cadence → Shipping → Order", count: 7, pct: 1.9 },
 ];
 
 const hourly = [14,22,31,28,19,12,8,7,9,18,32,58,74,88,102,119,134,128,115,97,79,61,44,28];
 
+const NAV_TABS = ["OVERVIEW", "FUNNEL", "SESSIONS", "ERRORS", "SALESFORCE SYNC"] as const;
+
 export default function Dashboard() {
   const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<(typeof NAV_TABS)[number]>("OVERVIEW");
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setShowDatePicker(false);
+      }
+    };
+    if (showDatePicker) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDatePicker]);
 
   return (
     <div style={{
@@ -244,33 +260,81 @@ export default function Dashboard() {
           <div style={{fontSize: 10, color: "#64748b", textAlign: "right"}}>
             <div>TODAY</div>
             <div style={{color: "#1d1d1f", fontSize: 13, fontWeight: 600}}>
-              {new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}
+              {selectedDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}
             </div>
           </div>
-          <div style={{
-            padding: "6px 14px",
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
-            borderRadius: 6,
-            fontSize: 10,
-            color: "#2563eb",
-            cursor: "pointer",
-            letterSpacing: "0.05em",
-          }}>TODAY ▾</div>
+          <div ref={datePickerRef} style={{position: "relative"}}>
+            <button
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              style={{
+                padding: "6px 14px",
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: 6,
+                fontSize: 10,
+                color: "#2563eb",
+                cursor: "pointer",
+                letterSpacing: "0.05em",
+                fontFamily: "inherit",
+              }}
+            >
+              {selectedDate.toDateString() === new Date().toDateString() ? "TODAY" : selectedDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} ▾
+            </button>
+            {showDatePicker && (
+              <div style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                marginTop: 4,
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 8,
+                padding: 12,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                zIndex: 50,
+              }}>
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setSelectedDate(new Date(e.target.value));
+                    setShowDatePicker(false);
+                  }}
+                  style={{
+                    fontSize: 12,
+                    padding: "6px 8px",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 4,
+                    fontFamily: "inherit",
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Nav */}
       <div className="header-nav" style={{marginTop: 16}}>
-        {["OVERVIEW","FUNNEL","SESSIONS","ERRORS","SALESFORCE SYNC"].map((t, i) => (
-          <div key={t} className={`nav-tab${i === 0 ? " active" : ""}`}>{t}</div>
+        {NAV_TABS.map((t) => (
+          <div
+            key={t}
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveTab(t)}
+            onKeyDown={(e) => e.key === "Enter" && setActiveTab(t)}
+            className={`nav-tab${activeTab === t ? " active" : ""}`}
+          >
+            {t}
+          </div>
         ))}
       </div>
 
       {/* Main Grid */}
       <div style={{padding: "20px 24px", display: "grid", gap: 16}}>
 
-        {/* Top KPI Row */}
+        {/* Top KPI Row - shown on OVERVIEW and FUNNEL */}
+        {(activeTab === "OVERVIEW" || activeTab === "FUNNEL") && (
         <div style={{display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12}}>
           {[
             { label: "Unique Visitors", value: "2,847", sub: "18,432 this week", trend: "+12.4%", up: true, cls: "teal" },
@@ -290,8 +354,10 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+        )}
 
-        {/* Hourly Sparkline */}
+        {/* Hourly Sparkline - OVERVIEW only */}
+        {activeTab === "OVERVIEW" && (
         <div className="card" style={{padding: "16px 20px"}}>
           <div className="section-header">Hourly Traffic — Today (00:00–23:00)</div>
           <div style={{display: "flex", alignItems: "flex-end", gap: 3, height: 60}}>
@@ -317,8 +383,10 @@ export default function Dashboard() {
             <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
           </div>
         </div>
+        )}
 
-        {/* Middle Row: Funnel + Sources */}
+        {/* Middle Row: Funnel + Sources - OVERVIEW and FUNNEL */}
+        {(activeTab === "OVERVIEW" || activeTab === "FUNNEL") && (
         <div style={{display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12}}>
 
           {/* Funnel */}
@@ -443,11 +511,13 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Bottom Row: Page Journeys + Drop-off Detail */}
-        <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12}}>
+        <div style={{display: "grid", gridTemplateColumns: activeTab === "OVERVIEW" ? "1fr 1fr" : "1fr", gap: 12}}>
 
-          {/* Page Journeys */}
+          {/* Page Journeys - OVERVIEW and FUNNEL */}
+          {(activeTab === "OVERVIEW" || activeTab === "FUNNEL") && (
           <div className="card" style={{padding: "16px 20px"}}>
             <div className="section-header">Top Page Journeys (Converters Today)</div>
             <div style={{display: "grid", gridTemplateColumns: "1fr 60px 50px", gap: "0 8px", fontSize: 9, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.08em"}}>
@@ -461,8 +531,10 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+          )}
 
-          {/* Drop-off Detail */}
+          {/* Drop-off Detail - OVERVIEW and ERRORS */}
+          {(activeTab === "OVERVIEW" || activeTab === "ERRORS") && (
           <div className="card" style={{padding: "16px 20px"}}>
             <div className="section-header">Drop-off Detail by Step</div>
             {[
@@ -522,6 +594,40 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
+          )}
+
+          {/* SESSIONS placeholder */}
+          {activeTab === "SESSIONS" && (
+          <div className="card" style={{padding: "24px", textAlign: "center", color: "#64748b"}}>
+            <div style={{fontSize: 14, marginBottom: 8}}>Session analytics</div>
+            <div style={{fontSize: 11}}>Session data will appear here when connected to your analytics source.</div>
+          </div>
+          )}
+
+          {/* SALESFORCE SYNC - standalone view */}
+          {activeTab === "SALESFORCE SYNC" && (
+          <div className="card" style={{padding: "24px"}}>
+            <div className="section-header">Salesforce Sync Status</div>
+            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12}}>
+              {[
+                { label: "Leads Created", val: "1,104", color: "#4f7cff" },
+                { label: "Opps Converted", val: "361", color: "#22c55e" },
+                { label: "Sync Errors", val: "3", color: "#ef4444" },
+              ].map(s => (
+                <div key={s.label} style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 6,
+                  padding: "16px",
+                  textAlign: "center",
+                }}>
+                  <div style={{fontWeight: 600, fontSize: 24, color: s.color}}>{s.val}</div>
+                  <div style={{fontSize: 10, color: "#64748b", marginTop: 6, letterSpacing: "0.08em"}}>{s.label.toUpperCase()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
         </div>
 
         {/* Footer */}
