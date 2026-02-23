@@ -43,29 +43,28 @@ export default function Dashboard() {
 
   return (
     <div style={{
-      fontFamily: "'DM Mono', 'Courier New', monospace",
-      background: "#080c14",
-      color: "#c8d6e5",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
+      background: "#ffffff",
+      color: "#1d1d1f",
       minHeight: "100vh",
       padding: "0",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@600;700;800&display=swap');
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #0d1420; }
-        ::-webkit-scrollbar-thumb { background: #1e2d42; border-radius: 2px; }
-        .card { background: #0d1420; border: 1px solid #1a2640; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; }
         .metric-card { 
-          background: #0d1420; 
-          border: 1px solid #1a2640; 
-          border-radius: 4px; 
+          background: #ffffff; 
+          border: 1px solid #e2e8f0; 
+          border-radius: 8px; 
           padding: 20px 24px; 
           position: relative;
           overflow: hidden;
           transition: border-color 0.2s;
         }
-        .metric-card:hover { border-color: #2a3f60; }
+        .metric-card:hover { border-color: #cbd5e1; }
         .metric-card::before {
           content: '';
           position: absolute;
@@ -77,23 +76,21 @@ export default function Dashboard() {
         .metric-card.amber::before { background: linear-gradient(90deg, #f59e0b, transparent); }
         .metric-card.green::before { background: linear-gradient(90deg, #22c55e, transparent); }
         .tag { 
-          font-family: 'Syne', sans-serif;
-          font-size: 9px; 
-          letter-spacing: 0.15em; 
+          font-size: 11px; 
+          letter-spacing: 0.08em; 
           text-transform: uppercase; 
-          color: #4a6080;
+          color: #64748b;
           margin-bottom: 8px;
         }
         .big-num {
-          font-family: 'Syne', sans-serif;
-          font-size: 36px;
-          font-weight: 800;
-          line-height: 1;
-          letter-spacing: -1px;
+          font-size: 32px;
+          font-weight: 600;
+          line-height: 1.2;
+          letter-spacing: -0.5px;
         }
         .funnel-bar {
           height: 36px;
-          border-radius: 2px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
           padding: 0 12px;
@@ -108,7 +105,7 @@ export default function Dashboard() {
           gap: 12px;
           align-items: center;
           padding: 6px 0;
-          border-bottom: 1px solid #0f1928;
+          border-bottom: 1px solid #e2e8f0;
         }
         .funnel-row:last-child { border-bottom: none; }
         .source-row {
@@ -117,15 +114,14 @@ export default function Dashboard() {
           gap: 8px;
           align-items: center;
           padding: 8px 0;
-          border-bottom: 1px solid #0f1928;
+          border-bottom: 1px solid #e2e8f0;
         }
         .source-row:last-child { border-bottom: none; }
         .section-header {
-          font-family: 'Syne', sans-serif;
           font-size: 11px;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #4a6080;
+          color: #64748b;
           margin-bottom: 16px;
           display: flex;
           align-items: center;
@@ -135,38 +131,38 @@ export default function Dashboard() {
           content: '';
           flex: 1;
           height: 1px;
-          background: #1a2640;
+          background: #e2e8f0;
         }
         .bar-track {
-          background: #111d2e;
-          border-radius: 2px;
+          background: #e2e8f0;
+          border-radius: 4px;
           height: 4px;
           overflow: hidden;
         }
         .bar-fill {
           height: 100%;
-          border-radius: 2px;
+          border-radius: 4px;
         }
         .pill {
           display: inline-block;
           padding: 2px 8px;
-          border-radius: 2px;
+          border-radius: 4px;
           font-size: 10px;
           font-weight: 500;
         }
-        .chip-up { background: rgba(34,197,94,0.12); color: #22c55e; }
-        .chip-down { background: rgba(239,68,68,0.12); color: #ef4444; }
+        .chip-up { background: rgba(34,197,94,0.12); color: #16a34a; }
+        .chip-down { background: rgba(239,68,68,0.12); color: #dc2626; }
         .spark-container { display: flex; align-items: flex-end; gap: 2px; height: 32px; }
         .spark-bar { 
           flex: 1; 
-          border-radius: 1px 1px 0 0; 
+          border-radius: 2px 2px 0 0; 
           transition: opacity 0.15s;
           min-width: 8px;
         }
         .spark-bar:hover { opacity: 0.7; }
         .path-row {
           padding: 10px 0;
-          border-bottom: 1px solid #0f1928;
+          border-bottom: 1px solid #e2e8f0;
           display: grid;
           grid-template-columns: 1fr 60px 50px;
           gap: 8px;
@@ -175,14 +171,14 @@ export default function Dashboard() {
         .path-row:last-child { border-bottom: none; }
         .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
         .status-bar {
-          background: #0d1420;
-          border-bottom: 1px solid #1a2640;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
           padding: 10px 24px;
           display: flex;
           align-items: center;
           gap: 24px;
           font-size: 10px;
-          color: #3a5070;
+          color: #64748b;
         }
         .live-dot {
           width: 6px; height: 6px; border-radius: 50%; background: #22c55e;
@@ -194,8 +190,8 @@ export default function Dashboard() {
           50% { opacity: 0.3; }
         }
         .header-nav {
-          background: #080c14;
-          border-bottom: 1px solid #1a2640;
+          background: #ffffff;
+          border-bottom: 1px solid #e2e8f0;
           padding: 0 24px;
           display: flex;
           align-items: center;
@@ -204,15 +200,14 @@ export default function Dashboard() {
         .nav-tab {
           padding: 14px 18px;
           font-size: 11px;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.05em;
           cursor: pointer;
-          color: #3a5070;
+          color: #64748b;
           border-bottom: 2px solid transparent;
           transition: all 0.15s;
-          font-family: 'Syne', sans-serif;
         }
-        .nav-tab.active { color: #00d4c8; border-bottom-color: #00d4c8; }
-        .nav-tab:hover:not(.active) { color: #6a8aa8; }
+        .nav-tab.active { color: #0891b2; border-bottom-color: #0891b2; }
+        .nav-tab:hover:not(.active) { color: #475569; }
       `}</style>
 
       {/* Status Bar */}
@@ -221,7 +216,7 @@ export default function Dashboard() {
         <span>Last sync: 0:23 ago</span>
         <span style={{marginLeft: 'auto'}}>ENV: PROD</span>
         <span>Amplitude · Tealium · Salesforce</span>
-        <span style={{color: '#22c55e'}}>● All systems nominal</span>
+        <span style={{color: '#16a34a'}}>● All systems nominal</span>
       </div>
 
       {/* Header */}
@@ -234,35 +229,33 @@ export default function Dashboard() {
       }}>
         <div>
           <div style={{
-            fontFamily: "'Syne', sans-serif",
             fontSize: 22,
-            fontWeight: 800,
+            fontWeight: 600,
             letterSpacing: "-0.5px",
-            color: "#e8f0fa",
+            color: "#1d1d1f",
           }}>
             MINIMED / EVENT LOG DASHBOARD
           </div>
-          <div style={{fontSize: 11, color: "#3a5070", marginTop: 4}}>
+          <div style={{fontSize: 11, color: "#64748b", marginTop: 4}}>
             eCommerce Funnel · Day One Operations View
           </div>
         </div>
         <div style={{display: "flex", gap: 8, alignItems: "center"}}>
-          <div style={{fontSize: 10, color: "#3a5070", textAlign: "right"}}>
+          <div style={{fontSize: 10, color: "#64748b", textAlign: "right"}}>
             <div>TODAY</div>
-            <div style={{color: "#c8d6e5", fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700}}>
+            <div style={{color: "#1d1d1f", fontSize: 13, fontWeight: 600}}>
               {new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}
             </div>
           </div>
           <div style={{
             padding: "6px 14px",
-            background: "#0d1420",
-            border: "1px solid #1a2640",
-            borderRadius: 3,
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: 6,
             fontSize: 10,
-            color: "#4f7cff",
+            color: "#2563eb",
             cursor: "pointer",
-            fontFamily: "'Syne', sans-serif",
-            letterSpacing: "0.08em",
+            letterSpacing: "0.05em",
           }}>TODAY ▾</div>
         </div>
       </div>
@@ -288,10 +281,10 @@ export default function Dashboard() {
             <div key={m.label} className={`metric-card ${m.cls}`}>
               <div className="tag">{m.label}</div>
               <div className="big-num" style={{
-                color: m.cls === "teal" ? "#00d4c8" : m.cls === "blue" ? "#4f7cff" : m.cls === "amber" ? "#f59e0b" : "#22c55e"
+                color: m.cls === "teal" ? "#0891b2" : m.cls === "blue" ? "#2563eb" : m.cls === "amber" ? "#d97706" : "#16a34a"
               }}>{m.value}</div>
               <div style={{marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-                <span style={{fontSize: 10, color: "#3a5070"}}>{m.sub}</span>
+                <span style={{fontSize: 10, color: "#64748b"}}>{m.sub}</span>
                 <span className={`pill ${m.up ? "chip-up" : "chip-down"}`}>{m.up ? "↑" : "↓"} {m.trend}</span>
               </div>
             </div>
@@ -310,7 +303,7 @@ export default function Dashboard() {
                 <div key={i} style={{
                   flex: 1,
                   height: h,
-                  background: isNow ? "#00d4c8" : i > new Date().getHours() ? "#111d2e" : "#1e3a5a",
+                  background: isNow ? "#0891b2" : i > new Date().getHours() ? "#e2e8f0" : "#94a3b8",
                   borderRadius: "2px 2px 0 0",
                   position: "relative",
                   cursor: "default",
@@ -320,7 +313,7 @@ export default function Dashboard() {
               );
             })}
           </div>
-          <div style={{display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 9, color: "#2a4060"}}>
+          <div style={{display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 9, color: "#94a3b8"}}>
             <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
           </div>
         </div>
@@ -332,10 +325,10 @@ export default function Dashboard() {
           <div className="card" style={{padding: "16px 20px"}}>
             <div className="section-header">Conversion Funnel — Form Starts Today</div>
             <div style={{display: "grid", gridTemplateColumns: "160px 1fr 68px 72px", gap: "0 12px", marginBottom: 8}}>
-              <span style={{fontSize: 9, color: "#2a4060", letterSpacing: "0.1em"}}>STEP</span>
+              <span style={{fontSize: 9, color: "#94a3b8", letterSpacing: "0.08em"}}>STEP</span>
               <span></span>
-              <span style={{fontSize: 9, color: "#2a4060", textAlign: "right", letterSpacing: "0.1em"}}>COUNT</span>
-              <span style={{fontSize: 9, color: "#2a4060", textAlign: "right", letterSpacing: "0.1em"}}>DROP</span>
+              <span style={{fontSize: 9, color: "#94a3b8", textAlign: "right", letterSpacing: "0.08em"}}>COUNT</span>
+              <span style={{fontSize: 9, color: "#94a3b8", textAlign: "right", letterSpacing: "0.08em"}}>DROP</span>
             </div>
             {funnelSteps.map((step, i) => (
               <div key={step.id}
@@ -345,7 +338,7 @@ export default function Dashboard() {
               >
                 <div style={{
                   fontSize: 10,
-                  color: activeStep === step.id ? "#00d4c8" : "#8aa8c8",
+                  color: activeStep === step.id ? "#0891b2" : "#475569",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -368,29 +361,29 @@ export default function Dashboard() {
                       top: -24,
                       left: `${step.pct}%`,
                       transform: "translateX(-50%)",
-                      background: "#1a2640",
-                      border: "1px solid #2a3f60",
-                      borderRadius: 3,
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 6,
                       padding: "3px 8px",
                       fontSize: 9,
-                      color: "#00d4c8",
+                      color: "#0891b2",
                       whiteSpace: "nowrap",
                       zIndex: 10,
                     }}>{step.pct}% of starts</div>
                   )}
                 </div>
-                <div style={{fontSize: 11, textAlign: "right", color: "#c8d6e5", fontFamily: "'Syne', sans-serif", fontWeight: 700}}>
+                <div style={{fontSize: 11, textAlign: "right", color: "#1d1d1f", fontWeight: 600}}>
                   {step.count.toLocaleString()}
                 </div>
                 <div style={{textAlign: "right"}}>
                   {step.drop !== null ? (
                     <span style={{
                       fontSize: 10,
-                      color: step.drop > 15 ? "#ef4444" : "#f59e0b",
-                      fontFamily: "'Syne', sans-serif",
+                      color: step.drop > 15 ? "#dc2626" : "#d97706",
+                      fontWeight: 600,
                     }}>−{step.drop}%</span>
                   ) : (
-                    <span style={{color: "#2a4060", fontSize: 9}}>—</span>
+                    <span style={{color: "#94a3b8", fontSize: 9}}>—</span>
                   )}
                 </div>
               </div>
@@ -398,15 +391,15 @@ export default function Dashboard() {
             <div style={{
               marginTop: 14,
               padding: "10px 12px",
-              background: "#080c14",
-              border: "1px solid #1a2640",
-              borderRadius: 3,
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: 6,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}>
-              <span style={{fontSize: 10, color: "#4a6080"}}>Quiz Start → Order</span>
-              <span style={{fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#22c55e"}}>32.7% end-to-end</span>
+              <span style={{fontSize: 10, color: "#64748b"}}>Quiz Start → Order</span>
+              <span style={{fontWeight: 600, fontSize: 14, color: "#16a34a"}}>32.7% end-to-end</span>
             </div>
           </div>
 
@@ -417,23 +410,23 @@ export default function Dashboard() {
               <div key={s.name} className="source-row">
                 <div style={{display: "flex", alignItems: "center", gap: 8}}>
                   <span className="dot" style={{background: s.color}} />
-                  <span style={{fontSize: 10, color: "#8aa8c8"}}>{s.name}</span>
+                  <span style={{fontSize: 10, color: "#475569"}}>{s.name}</span>
                 </div>
-                <div style={{fontSize: 11, textAlign: "right", color: "#c8d6e5", fontFamily: "'Syne', sans-serif", fontWeight: 700}}>
+                <div style={{fontSize: 11, textAlign: "right", color: "#1d1d1f", fontWeight: 600}}>
                   {s.visitors.toLocaleString()}
                 </div>
                 <div>
                   <div className="bar-track">
                     <div className="bar-fill" style={{width: `${s.pct}%`, background: s.color, opacity: 0.8}} />
                   </div>
-                  <div style={{fontSize: 9, color: "#3a5070", marginTop: 3, textAlign: "right"}}>{s.pct}%</div>
+                  <div style={{fontSize: 9, color: "#64748b", marginTop: 3, textAlign: "right"}}>{s.pct}%</div>
                 </div>
               </div>
             ))}
 
             {/* Conversion by Source mini table */}
             <div className="section-header" style={{marginTop: 20}}>Conv. Rate by Source</div>
-            <div style={{display: "grid", gridTemplateColumns: "1fr 50px 50px", gap: "0 8px", fontSize: 9, color: "#2a4060", marginBottom: 6, letterSpacing: "0.08em"}}>
+            <div style={{display: "grid", gridTemplateColumns: "1fr 50px 50px", gap: "0 8px", fontSize: 9, color: "#94a3b8", marginBottom: 6, letterSpacing: "0.08em"}}>
               <span>SOURCE</span><span style={{textAlign:"right"}}>CVR%</span><span style={{textAlign:"right"}}>RANK</span>
             </div>
             {[
@@ -442,10 +435,10 @@ export default function Dashboard() {
               { name: "Paid Search", cvr: "13.2", rank: 3 },
               { name: "Organic", cvr: "10.8", rank: 4 },
             ].map(r => (
-              <div key={r.name} style={{display: "grid", gridTemplateColumns: "1fr 50px 50px", gap: "0 8px", padding: "5px 0", borderBottom: "1px solid #0f1928"}}>
-                <span style={{fontSize: 10, color: "#6a8aa8"}}>{r.name}</span>
-                <span style={{textAlign: "right", fontSize: 10, color: "#22c55e", fontFamily: "'Syne', sans-serif", fontWeight: 700}}>{r.cvr}%</span>
-                <span style={{textAlign: "right", fontSize: 10, color: "#3a5070"}}>#{r.rank}</span>
+              <div key={r.name} style={{display: "grid", gridTemplateColumns: "1fr 50px 50px", gap: "0 8px", padding: "5px 0", borderBottom: "1px solid #e2e8f0"}}>
+                <span style={{fontSize: 10, color: "#475569"}}>{r.name}</span>
+                <span style={{textAlign: "right", fontSize: 10, color: "#16a34a", fontWeight: 600}}>{r.cvr}%</span>
+                <span style={{textAlign: "right", fontSize: 10, color: "#64748b"}}>#{r.rank}</span>
               </div>
             ))}
           </div>
@@ -457,14 +450,14 @@ export default function Dashboard() {
           {/* Page Journeys */}
           <div className="card" style={{padding: "16px 20px"}}>
             <div className="section-header">Top Page Journeys (Converters Today)</div>
-            <div style={{display: "grid", gridTemplateColumns: "1fr 60px 50px", gap: "0 8px", fontSize: 9, color: "#2a4060", marginBottom: 8, letterSpacing: "0.08em"}}>
+            <div style={{display: "grid", gridTemplateColumns: "1fr 60px 50px", gap: "0 8px", fontSize: 9, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.08em"}}>
               <span>PATH</span><span style={{textAlign:"right"}}>ORDERS</span><span style={{textAlign:"right"}}>SHARE</span>
             </div>
             {journeyPaths.map((j, i) => (
               <div key={i} className="path-row">
-                <div style={{fontSize: 9, color: "#6a8aa8", lineHeight: 1.5, wordBreak: "break-word"}}>{j.path}</div>
-                <div style={{textAlign: "right", fontSize: 11, color: "#c8d6e5", fontFamily: "'Syne', sans-serif", fontWeight: 700}}>{j.count}</div>
-                <div style={{textAlign: "right", fontSize: 10, color: "#4a6080"}}>{j.pct}%</div>
+                <div style={{fontSize: 9, color: "#475569", lineHeight: 1.5, wordBreak: "break-word"}}>{j.path}</div>
+                <div style={{textAlign: "right", fontSize: 11, color: "#1d1d1f", fontWeight: 600}}>{j.count}</div>
+                <div style={{textAlign: "right", fontSize: 10, color: "#64748b"}}>{j.pct}%</div>
               </div>
             ))}
           </div>
@@ -486,25 +479,24 @@ export default function Dashboard() {
                 gridTemplateColumns: "minmax(180px, 1fr) 1fr 50px",
                 gap: 8,
                 padding: "8px 0",
-                borderBottom: "1px solid #0f1928",
+                borderBottom: "1px solid #e2e8f0",
                 alignItems: "center",
               }}>
                 <div>
-                  <div style={{fontSize: 10, color: "#8aa8c8"}}>{d.step}</div>
-                  <div style={{fontSize: 9, color: "#3a5070", marginTop: 2}}>{d.reason}</div>
+                  <div style={{fontSize: 10, color: "#475569"}}>{d.step}</div>
+                  <div style={{fontSize: 9, color: "#64748b", marginTop: 2}}>{d.reason}</div>
                 </div>
                 <div className="bar-track">
                   <div className="bar-fill" style={{
                     width: `${(d.count/82)*100}%`,
-                    background: d.severity === "high" ? "#ef4444" : d.severity === "med" ? "#f59e0b" : "#4f7cff",
+                    background: d.severity === "high" ? "#dc2626" : d.severity === "med" ? "#d97706" : "#2563eb",
                   }} />
                 </div>
                 <div style={{
                   textAlign: "right",
                   fontSize: 11,
-                  fontFamily: "'Syne', sans-serif",
-                  fontWeight: 700,
-                  color: d.severity === "high" ? "#ef4444" : d.severity === "med" ? "#f59e0b" : "#4f7cff",
+                  fontWeight: 600,
+                  color: d.severity === "high" ? "#dc2626" : d.severity === "med" ? "#d97706" : "#2563eb",
                 }}>{d.count}</div>
               </div>
             ))}
@@ -518,14 +510,14 @@ export default function Dashboard() {
                 { label: "Sync Errors", val: "3", color: "#ef4444" },
               ].map(s => (
                 <div key={s.label} style={{
-                  background: "#080c14",
-                  border: `1px solid ${s.color}22`,
-                  borderRadius: 3,
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 6,
                   padding: "10px 12px",
                   textAlign: "center",
                 }}>
-                  <div style={{fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: s.color}}>{s.val}</div>
-                  <div style={{fontSize: 9, color: "#3a5070", marginTop: 4, letterSpacing: "0.08em"}}>{s.label.toUpperCase()}</div>
+                  <div style={{fontWeight: 600, fontSize: 20, color: s.color}}>{s.val}</div>
+                  <div style={{fontSize: 9, color: "#64748b", marginTop: 4, letterSpacing: "0.08em"}}>{s.label.toUpperCase()}</div>
                 </div>
               ))}
             </div>
@@ -538,9 +530,9 @@ export default function Dashboard() {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "10px 0",
-          borderTop: "1px solid #1a2640",
+          borderTop: "1px solid #e2e8f0",
           fontSize: 9,
-          color: "#2a4060",
+          color: "#94a3b8",
           letterSpacing: "0.08em",
         }}>
           <span>MINIMED ECOMMERCE · EVENT LOG v1.0 · DAY ONE OPS</span>
@@ -548,7 +540,7 @@ export default function Dashboard() {
             <span>● Amplitude</span>
             <span>● Tealium</span>
             <span>● Salesforce</span>
-            <span style={{color: "#22c55e"}}>● Fresh Paint HIPAA</span>
+            <span style={{color: "#16a34a"}}>● Fresh Paint HIPAA</span>
           </span>
           <span>AUTO-REFRESH: 30s</span>
         </div>
