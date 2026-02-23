@@ -68,6 +68,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+### macOS setup (if `npm` is not found)
+
+Install Node.js which includes `npm` (Homebrew recommended):
+
+```bash
+# Install Homebrew if you don't have it:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Node.js
+brew install node
+
+# Then install deps and run dev server
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) after the server starts.
+
 ## Changes from original
 
 - **Insurance Scan** → **Insurance Upload**
