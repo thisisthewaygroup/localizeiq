@@ -1,656 +1,285 @@
-"use client";
+'use client'
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useCallback } from 'react'
+import { ImageUploader } from '@/components/ImageUploader'
+import { MarketSelector } from '@/components/MarketSelector'
+import { SpecSelector } from '@/components/SpecSelector'
+import { ResultsView } from '@/components/ResultsView'
+import type { LocalizationResult } from '@/lib/types'
+import { Globe, Zap, ArrowRight, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-const data = {
-  visitors: { today: 2847, week: 18432, trend: +12.4 },
-  formStarts: { today: 1104, week: 7230, rate: 38.8 },
-  dropoffs: { today: 743, week: 4891, rate: 67.3 },
-  conversions: { today: 361, week: 2339, rate: 12.7 },
-};
+type Step = 'upload' | 'configure' | 'analyzing' | 'results'
 
-const sources = [
-  { name: "Organic Search", visitors: 892, pct: 31.3, color: "#00d4c8" },
-  { name: "Paid Search", visitors: 741, pct: 26.0, color: "#4f7cff" },
-  { name: "Direct", visitors: 498, pct: 17.5, color: "#a78bfa" },
-  { name: "Email / Nurture", visitors: 412, pct: 14.5, color: "#f59e0b" },
-  { name: "Social", visitors: 193, pct: 6.8, color: "#f472b6" },
-  { name: "Referral", visitors: 111, pct: 3.9, color: "#6b7280" },
-];
+const ANALYZING_MESSAGES = [
+  'Analyzing image content and composition...',
+  'Running cultural fit analysis across markets...',
+  'Generating localized copy recommendations...',
+  'Evaluating spec compliance for each format...',
+  'Checking regulatory and platform requirements...',
+  'Finalizing localization report...',
+]
 
-const funnelSteps = [
-  { id: "quiz", label: "Quiz Start", count: 1104, pct: 100, drop: null },
-  { id: "product", label: "Product Selection", count: 891, pct: 80.7, drop: 19.3 },
-  { id: "contact", label: "Contact Info", count: 734, pct: 66.5, drop: 17.6 },
-  { id: "insurance", label: "Insurance Upload", count: 612, pct: 55.4, drop: 16.6 },
-  { id: "Resupply Cadence", label: "Product Review & Resupply Cadence", count: 529, pct: 47.9, drop: 12.3 },
-  { id: "shipping", label: "Shipping", count: 448, pct: 40.6, drop: 15.3 },
-  { id: "Order", label: "Order", count: 361, pct: 32.7, drop: 19.4 },
-];
+export default function Home() {
+  const [step, setStep] = useState<Step>('upload')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [selectedMarkets, setSelectedMarkets] = useState<string[]>(['us', 'jp', 'gb', 'fr', 'de'])
+  const [selectedSpecs, setSelectedSpecs] = useState<string[]>(['ec_pdp', 'ec_banner', 'ooh_billboard', 'ooh_bus', 'retail_shelf'])
+  const [result, setResult] = useState<LocalizationResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [analyzeMessageIndex, setAnalyzeMessageIndex] = useState(0)
 
-const journeyPaths = [
-  { path: "Quiz Start → Product Selection → Contact Info → Insurance Upload → Product Review & Resupply Cadence → Shipping → Order", count: 218, pct: 60.4 },
-  { path: "Quiz Start → Product Selection → Contact Info → Skip Insurance → Product Review & Resupply Cadence → Shipping → Order", count: 87, pct: 24.1 },
-  { path: "Quiz Start → Product Selection → Contact Info → Insurance Upload → Product Review & Resupply Cadence → Back → Product Review & Resupply Cadence → Shipping → Order", count: 31, pct: 8.6 },
-  { path: "Quiz Start → Product Selection → Contact Info → Address Fail → Contact Info → … → Order", count: 18, pct: 5.0 },
-  { path: "Deep-link → Product Selection → Contact Info → Insurance Upload → Product Review & Resupply Cadence → Shipping → Order", count: 7, pct: 1.9 },
-];
+  const handleImageSelected = useCallback((file: File, url: string) => {
+    setImageFile(file)
+    setImageUrl(url)
+    setStep('configure')
+  }, [])
 
-const hourly = [14,22,31,28,19,12,8,7,9,18,32,58,74,88,102,119,134,128,115,97,79,61,44,28];
+  const handleClearImage = useCallback(() => {
+    setImageFile(null)
+    if (imageUrl) URL.revokeObjectURL(imageUrl)
+    setImageUrl(null)
+    setStep('upload')
+    setResult(null)
+    setError(null)
+  }, [imageUrl])
 
-const NAV_TABS = ["OVERVIEW", "FUNNEL", "SESSIONS", "ERRORS", "SALESFORCE SYNC"] as const;
+  const handleAnalyze = useCallback(async () => {
+    if (!imageFile || selectedMarkets.length === 0 || selectedSpecs.length === 0) return
 
-export default function Dashboard() {
-  const [activeStep, setActiveStep] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<(typeof NAV_TABS)[number]>("OVERVIEW");
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const datePickerRef = useRef<HTMLDivElement>(null);
+    setStep('analyzing')
+    setError(null)
+    setAnalyzeMessageIndex(0)
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
-        setShowDatePicker(false);
+    // Rotate through messages while analyzing
+    const interval = setInterval(() => {
+      setAnalyzeMessageIndex((i) => (i + 1) % ANALYZING_MESSAGES.length)
+    }, 2200)
+
+    try {
+      const formData = new FormData()
+      formData.append('image', imageFile)
+      formData.append('markets', JSON.stringify(selectedMarkets))
+      formData.append('specs', JSON.stringify(selectedSpecs))
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Analysis failed')
       }
-    };
-    if (showDatePicker) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showDatePicker]);
+
+      const data: LocalizationResult = await response.json()
+      setResult(data)
+      setStep('results')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setStep('configure')
+    } finally {
+      clearInterval(interval)
+    }
+  }, [imageFile, selectedMarkets, selectedSpecs])
+
+  const handleReset = useCallback(() => {
+    handleClearImage()
+  }, [handleClearImage])
 
   return (
-    <div style={{
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
-      background: "#ffffff",
-      color: "#1d1d1f",
-      minHeight: "100vh",
-      padding: "0",
-    }}>
-      <style>{`
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
-        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; }
-        .metric-card { 
-          background: #ffffff; 
-          border: 1px solid #e2e8f0; 
-          border-radius: 8px; 
-          padding: 20px 24px; 
-          position: relative;
-          overflow: hidden;
-          transition: border-color 0.2s;
-        }
-        .metric-card:hover { border-color: #cbd5e1; }
-        .metric-card::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 1px;
-        }
-        .metric-card.teal::before { background: linear-gradient(90deg, #00d4c8, transparent); }
-        .metric-card.blue::before { background: linear-gradient(90deg, #4f7cff, transparent); }
-        .metric-card.amber::before { background: linear-gradient(90deg, #f59e0b, transparent); }
-        .metric-card.green::before { background: linear-gradient(90deg, #22c55e, transparent); }
-        .tag { 
-          font-size: 11px; 
-          letter-spacing: 0.08em; 
-          text-transform: uppercase; 
-          color: #64748b;
-          margin-bottom: 8px;
-        }
-        .big-num {
-          font-size: 32px;
-          font-weight: 600;
-          line-height: 1.2;
-          letter-spacing: -0.5px;
-        }
-        .funnel-bar {
-          height: 36px;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          padding: 0 12px;
-          cursor: pointer;
-          transition: opacity 0.15s;
-          position: relative;
-        }
-        .funnel-bar:hover { opacity: 0.85; }
-        .funnel-row { 
-          display: grid; 
-          grid-template-columns: 160px 1fr 80px 80px; 
-          gap: 12px;
-          align-items: center;
-          padding: 6px 0;
-          border-bottom: 1px solid #e2e8f0;
-        }
-        .funnel-row:last-child { border-bottom: none; }
-        .source-row {
-          display: grid;
-          grid-template-columns: 1fr 60px 70px;
-          gap: 8px;
-          align-items: center;
-          padding: 8px 0;
-          border-bottom: 1px solid #e2e8f0;
-        }
-        .source-row:last-child { border-bottom: none; }
-        .section-header {
-          font-size: 11px;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #64748b;
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .section-header::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: #e2e8f0;
-        }
-        .bar-track {
-          background: #e2e8f0;
-          border-radius: 4px;
-          height: 4px;
-          overflow: hidden;
-        }
-        .bar-fill {
-          height: 100%;
-          border-radius: 4px;
-        }
-        .pill {
-          display: inline-block;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 10px;
-          font-weight: 500;
-        }
-        .chip-up { background: rgba(34,197,94,0.12); color: #16a34a; }
-        .chip-down { background: rgba(239,68,68,0.12); color: #dc2626; }
-        .spark-container { display: flex; align-items: flex-end; gap: 2px; height: 32px; }
-        .spark-bar { 
-          flex: 1; 
-          border-radius: 2px 2px 0 0; 
-          transition: opacity 0.15s;
-          min-width: 8px;
-        }
-        .spark-bar:hover { opacity: 0.7; }
-        .path-row {
-          padding: 10px 0;
-          border-bottom: 1px solid #e2e8f0;
-          display: grid;
-          grid-template-columns: 1fr 60px 50px;
-          gap: 8px;
-          align-items: center;
-        }
-        .path-row:last-child { border-bottom: none; }
-        .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-        .status-bar {
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 10px 24px;
-          display: flex;
-          align-items: center;
-          gap: 24px;
-          font-size: 10px;
-          color: #64748b;
-        }
-        .live-dot {
-          width: 6px; height: 6px; border-radius: 50%; background: #22c55e;
-          animation: pulse 2s infinite;
-          display: inline-block;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-        .header-nav {
-          background: #ffffff;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 0 24px;
-          display: flex;
-          align-items: center;
-          gap: 0;
-        }
-        .nav-tab {
-          padding: 14px 18px;
-          font-size: 11px;
-          letter-spacing: 0.05em;
-          cursor: pointer;
-          color: #64748b;
-          border-bottom: 2px solid transparent;
-          transition: all 0.15s;
-        }
-        .nav-tab.active { color: #0891b2; border-bottom-color: #0891b2; }
-        .nav-tab:hover:not(.active) { color: #475569; }
-      `}</style>
-
-      {/* Status Bar */}
-      <div className="status-bar">
-        <span><span className="live-dot" style={{marginRight: 6}}/> LIVE</span>
-        <span>Last sync: 0:23 ago</span>
-        <span style={{marginLeft: 'auto'}}>ENV: PROD</span>
-        <span>Amplitude · Tealium · Salesforce</span>
-        <span style={{color: '#16a34a'}}>● All systems nominal</span>
-      </div>
-
+    <div className="min-h-screen bg-[#f9f9f9]">
       {/* Header */}
-      <div style={{
-        padding: "20px 24px 0",
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "space-between",
-        marginBottom: 0,
-      }}>
-        <div>
-          <div style={{
-            fontSize: 22,
-            fontWeight: 600,
-            letterSpacing: "-0.5px",
-            color: "#1d1d1f",
-          }}>
-            MINIMED / EVENT LOG DASHBOARD
+      <header className="bg-white border-b border-zinc-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center">
+              <Globe className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold text-zinc-900 tracking-tight">LocalizeIQ</span>
+            <span className="text-zinc-300 text-sm">·</span>
+            <span className="text-zinc-500 text-sm hidden sm:block">AI-Powered Global Content Localization</span>
           </div>
-          <div style={{fontSize: 11, color: "#64748b", marginTop: 4}}>
-            eCommerce Funnel · Day One Operations View
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full font-medium">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              Claude AI Active
+            </span>
           </div>
         </div>
-        <div style={{display: "flex", gap: 8, alignItems: "center"}}>
-          <div style={{fontSize: 10, color: "#64748b", textAlign: "right"}}>
-            <div>TODAY</div>
-            <div style={{color: "#1d1d1f", fontSize: 13, fontWeight: 600}}>
-              {selectedDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}
+      </header>
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+
+        {/* Upload Step */}
+        {step === 'upload' && (
+          <div className="animate-slide-up max-w-2xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-3 py-1.5 rounded-full mb-4">
+                <Zap className="w-3.5 h-3.5" />
+                One image · Any market · Every spec
+              </div>
+              <h1 className="text-4xl font-bold text-zinc-900 tracking-tight mb-3">
+                Global-ready in minutes
+              </h1>
+              <p className="text-zinc-500 text-lg leading-relaxed">
+                Upload a hero image and LocalizeIQ will generate culturally-adapted variants
+                for every market and output spec — fully spec-compliant and brand-safe.
+              </p>
+            </div>
+
+            <ImageUploader
+              onImageSelected={handleImageSelected}
+              previewUrl={null}
+              onClear={handleClearImage}
+            />
+
+            {/* Feature row */}
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              {[
+                { label: '10 Markets', sub: 'With deep cultural intelligence' },
+                { label: '9 Output Specs', sub: 'E-comm, OOH, and Retail' },
+                { label: 'AI Compliance', sub: 'Regulatory & platform checks' },
+              ].map((f) => (
+                <div key={f.label} className="text-center p-4 bg-white border border-zinc-200 rounded-2xl">
+                  <p className="font-semibold text-zinc-900 text-sm">{f.label}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">{f.sub}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div ref={datePickerRef} style={{position: "relative"}}>
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              style={{
-                padding: "6px 14px",
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: 6,
-                fontSize: 10,
-                color: "#2563eb",
-                cursor: "pointer",
-                letterSpacing: "0.05em",
-                fontFamily: "inherit",
-              }}
-            >
-              {selectedDate.toDateString() === new Date().toDateString() ? "TODAY" : selectedDate.toLocaleDateString('en-US', {month:'short', day:'numeric'})} ▾
-            </button>
-            {showDatePicker && (
-              <div style={{
-                position: "absolute",
-                top: "100%",
-                right: 0,
-                marginTop: 4,
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 8,
-                padding: 12,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                zIndex: 50,
-              }}>
-                <input
-                  type="date"
-                  value={selectedDate.toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    setSelectedDate(new Date(e.target.value));
-                    setShowDatePicker(false);
-                  }}
-                  style={{
-                    fontSize: 12,
-                    padding: "6px 8px",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 4,
-                    fontFamily: "inherit",
-                  }}
-                />
+        )}
+
+        {/* Configure Step */}
+        {step === 'configure' && imageUrl && (
+          <div className="animate-fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900">Configure Localization</h2>
+                <p className="text-zinc-500 text-sm mt-0.5">Select your target markets and output specs</p>
+              </div>
+              <button
+                onClick={handleAnalyze}
+                disabled={selectedMarkets.length === 0 || selectedSpecs.length === 0}
+                className={cn(
+                  'flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all',
+                  selectedMarkets.length > 0 && selectedSpecs.length > 0
+                    ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm hover:shadow-md'
+                    : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                )}
+              >
+                Analyze & Localize
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
+                {error}
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Nav */}
-      <div className="header-nav" style={{marginTop: 16}}>
-        {NAV_TABS.map((t) => (
-          <div
-            key={t}
-            role="button"
-            tabIndex={0}
-            onClick={() => setActiveTab(t)}
-            onKeyDown={(e) => e.key === "Enter" && setActiveTab(t)}
-            className={`nav-tab${activeTab === t ? " active" : ""}`}
-          >
-            {t}
-          </div>
-        ))}
-      </div>
+            <div className="grid grid-cols-12 gap-6">
+              {/* Image preview */}
+              <div className="col-span-3">
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Hero Image</p>
+                <ImageUploader
+                  onImageSelected={handleImageSelected}
+                  previewUrl={imageUrl}
+                  onClear={handleClearImage}
+                />
+                <p className="text-xs text-zinc-400 mt-2 text-center">Click to replace</p>
+              </div>
 
-      {/* Main Grid */}
-      <div style={{padding: "20px 24px", display: "grid", gap: 16}}>
+              {/* Markets */}
+              <div className="col-span-5 bg-white border border-zinc-200 rounded-2xl p-5">
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Target Markets</p>
+                <MarketSelector selected={selectedMarkets} onChange={setSelectedMarkets} />
+              </div>
 
-        {/* Top KPI Row - shown on OVERVIEW and FUNNEL */}
-        {(activeTab === "OVERVIEW" || activeTab === "FUNNEL") && (
-        <div style={{display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12}}>
-          {[
-            { label: "Unique Visitors", value: "2,847", sub: "18,432 this week", trend: "+12.4%", up: true, cls: "teal" },
-            { label: "Form Starts", value: "1,104", sub: "38.8% visit-to-start", trend: "+8.1%", up: true, cls: "blue" },
-            { label: "Drop-offs", value: "743", sub: "67.3% of form starts", trend: "-3.2%", up: false, cls: "amber" },
-            { label: "Conversions", value: "361", sub: "12.7% overall rate", trend: "+18.9%", up: true, cls: "green" },
-          ].map(m => (
-            <div key={m.label} className={`metric-card ${m.cls}`}>
-              <div className="tag">{m.label}</div>
-              <div className="big-num" style={{
-                color: m.cls === "teal" ? "#0891b2" : m.cls === "blue" ? "#2563eb" : m.cls === "amber" ? "#d97706" : "#16a34a"
-              }}>{m.value}</div>
-              <div style={{marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-                <span style={{fontSize: 10, color: "#64748b"}}>{m.sub}</span>
-                <span className={`pill ${m.up ? "chip-up" : "chip-down"}`}>{m.up ? "↑" : "↓"} {m.trend}</span>
+              {/* Specs */}
+              <div className="col-span-4 bg-white border border-zinc-200 rounded-2xl p-5">
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4">Output Specs</p>
+                <SpecSelector selected={selectedSpecs} onChange={setSelectedSpecs} />
               </div>
             </div>
-          ))}
-        </div>
-        )}
 
-        {/* Hourly Sparkline - OVERVIEW only */}
-        {activeTab === "OVERVIEW" && (
-        <div className="card" style={{padding: "16px 20px"}}>
-          <div className="section-header">Hourly Traffic — Today (00:00–23:00)</div>
-          <div style={{display: "flex", alignItems: "flex-end", gap: 3, height: 60}}>
-            {hourly.map((v, i) => {
-              const max = Math.max(...hourly);
-              const h = (v / max) * 60;
-              const isNow = i === new Date().getHours();
-              return (
-                <div key={i} style={{
-                  flex: 1,
-                  height: h,
-                  background: isNow ? "#0891b2" : i > new Date().getHours() ? "#e2e8f0" : "#94a3b8",
-                  borderRadius: "2px 2px 0 0",
-                  position: "relative",
-                  cursor: "default",
-                  transition: "opacity 0.15s",
-                  minWidth: 0,
-                }} title={`${String(i).padStart(2,'0')}:00 — ${v} visitors`} />
-              );
-            })}
-          </div>
-          <div style={{display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 9, color: "#94a3b8"}}>
-            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-          </div>
-        </div>
-        )}
-
-        {/* Middle Row: Funnel + Sources - OVERVIEW and FUNNEL */}
-        {(activeTab === "OVERVIEW" || activeTab === "FUNNEL") && (
-        <div style={{display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12}}>
-
-          {/* Funnel */}
-          <div className="card" style={{padding: "16px 20px"}}>
-            <div className="section-header">Conversion Funnel — Form Starts Today</div>
-            <div style={{display: "grid", gridTemplateColumns: "160px 1fr 68px 72px", gap: "0 12px", marginBottom: 8}}>
-              <span style={{fontSize: 9, color: "#94a3b8", letterSpacing: "0.08em"}}>STEP</span>
-              <span></span>
-              <span style={{fontSize: 9, color: "#94a3b8", textAlign: "right", letterSpacing: "0.08em"}}>COUNT</span>
-              <span style={{fontSize: 9, color: "#94a3b8", textAlign: "right", letterSpacing: "0.08em"}}>DROP</span>
-            </div>
-            {funnelSteps.map((step, i) => (
-              <div key={step.id}
-                className="funnel-row"
-                onClick={() => setActiveStep(activeStep === step.id ? null : step.id)}
-                style={{cursor: "pointer"}}
+            {/* Bottom CTA */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleAnalyze}
+                disabled={selectedMarkets.length === 0 || selectedSpecs.length === 0}
+                className={cn(
+                  'flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all',
+                  selectedMarkets.length > 0 && selectedSpecs.length > 0
+                    ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm hover:shadow-lg'
+                    : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
+                )}
               >
-                <div style={{
-                  fontSize: 10,
-                  color: activeStep === step.id ? "#0891b2" : "#475569",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}>{step.label}</div>
-                <div style={{position: "relative"}}>
-                  <div className="bar-track">
-                    <div className="bar-fill" style={{
-                      width: `${step.pct}%`,
-                      background: `linear-gradient(90deg, ${
-                        i === 0 ? "#00d4c8" :
-                        i <= 2 ? "#4f7cff" :
-                        i <= 4 ? "#a78bfa" :
-                        "#f59e0b"
-                      }, transparent)`,
-                    }} />
-                  </div>
-                  {activeStep === step.id && (
-                    <div style={{
-                      position: "absolute",
-                      top: -24,
-                      left: `${step.pct}%`,
-                      transform: "translateX(-50%)",
-                      background: "#ffffff",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 6,
-                      padding: "3px 8px",
-                      fontSize: 9,
-                      color: "#0891b2",
-                      whiteSpace: "nowrap",
-                      zIndex: 10,
-                    }}>{step.pct}% of starts</div>
-                  )}
-                </div>
-                <div style={{fontSize: 11, textAlign: "right", color: "#1d1d1f", fontWeight: 600}}>
-                  {step.count.toLocaleString()}
-                </div>
-                <div style={{textAlign: "right"}}>
-                  {step.drop !== null ? (
-                    <span style={{
-                      fontSize: 10,
-                      color: step.drop > 15 ? "#dc2626" : "#d97706",
-                      fontWeight: 600,
-                    }}>−{step.drop}%</span>
-                  ) : (
-                    <span style={{color: "#94a3b8", fontSize: 9}}>—</span>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div style={{
-              marginTop: 14,
-              padding: "10px 12px",
-              background: "#f8fafc",
-              border: "1px solid #e2e8f0",
-              borderRadius: 6,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <span style={{fontSize: 10, color: "#64748b"}}>Quiz Start → Order</span>
-              <span style={{fontWeight: 600, fontSize: 14, color: "#16a34a"}}>32.7% end-to-end</span>
+                Analyze & Localize
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
-
-          {/* Sources */}
-          <div className="card" style={{padding: "16px 20px"}}>
-            <div className="section-header">Traffic Sources</div>
-            {sources.map(s => (
-              <div key={s.name} className="source-row">
-                <div style={{display: "flex", alignItems: "center", gap: 8}}>
-                  <span className="dot" style={{background: s.color}} />
-                  <span style={{fontSize: 10, color: "#475569"}}>{s.name}</span>
-                </div>
-                <div style={{fontSize: 11, textAlign: "right", color: "#1d1d1f", fontWeight: 600}}>
-                  {s.visitors.toLocaleString()}
-                </div>
-                <div>
-                  <div className="bar-track">
-                    <div className="bar-fill" style={{width: `${s.pct}%`, background: s.color, opacity: 0.8}} />
-                  </div>
-                  <div style={{fontSize: 9, color: "#64748b", marginTop: 3, textAlign: "right"}}>{s.pct}%</div>
-                </div>
-              </div>
-            ))}
-
-            {/* Conversion by Source mini table */}
-            <div className="section-header" style={{marginTop: 20}}>Conv. Rate by Source</div>
-            <div style={{display: "grid", gridTemplateColumns: "1fr 50px 50px", gap: "0 8px", fontSize: 9, color: "#94a3b8", marginBottom: 6, letterSpacing: "0.08em"}}>
-              <span>SOURCE</span><span style={{textAlign:"right"}}>CVR%</span><span style={{textAlign:"right"}}>RANK</span>
-            </div>
-            {[
-              { name: "Email / Nurture", cvr: "19.4", rank: 1 },
-              { name: "Direct", cvr: "16.1", rank: 2 },
-              { name: "Paid Search", cvr: "13.2", rank: 3 },
-              { name: "Organic", cvr: "10.8", rank: 4 },
-            ].map(r => (
-              <div key={r.name} style={{display: "grid", gridTemplateColumns: "1fr 50px 50px", gap: "0 8px", padding: "5px 0", borderBottom: "1px solid #e2e8f0"}}>
-                <span style={{fontSize: 10, color: "#475569"}}>{r.name}</span>
-                <span style={{textAlign: "right", fontSize: 10, color: "#16a34a", fontWeight: 600}}>{r.cvr}%</span>
-                <span style={{textAlign: "right", fontSize: 10, color: "#64748b"}}>#{r.rank}</span>
-              </div>
-            ))}
-          </div>
-        </div>
         )}
 
-        {/* Bottom Row: Page Journeys + Drop-off Detail */}
-        <div style={{display: "grid", gridTemplateColumns: activeTab === "OVERVIEW" ? "1fr 1fr" : "1fr", gap: 12}}>
-
-          {/* Page Journeys - OVERVIEW and FUNNEL */}
-          {(activeTab === "OVERVIEW" || activeTab === "FUNNEL") && (
-          <div className="card" style={{padding: "16px 20px"}}>
-            <div className="section-header">Top Page Journeys (Converters Today)</div>
-            <div style={{display: "grid", gridTemplateColumns: "1fr 60px 50px", gap: "0 8px", fontSize: 9, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.08em"}}>
-              <span>PATH</span><span style={{textAlign:"right"}}>ORDERS</span><span style={{textAlign:"right"}}>SHARE</span>
-            </div>
-            {journeyPaths.map((j, i) => (
-              <div key={i} className="path-row">
-                <div style={{fontSize: 9, color: "#475569", lineHeight: 1.5, wordBreak: "break-word"}}>{j.path}</div>
-                <div style={{textAlign: "right", fontSize: 11, color: "#1d1d1f", fontWeight: 600}}>{j.count}</div>
-                <div style={{textAlign: "right", fontSize: 10, color: "#64748b"}}>{j.pct}%</div>
+        {/* Analyzing Step */}
+        {step === 'analyzing' && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+            <div className="text-center max-w-sm">
+              <div className="w-16 h-16 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
               </div>
-            ))}
-          </div>
-          )}
-
-          {/* Drop-off Detail - OVERVIEW and ERRORS */}
-          {(activeTab === "OVERVIEW" || activeTab === "ERRORS") && (
-          <div className="card" style={{padding: "16px 20px"}}>
-            <div className="section-header">Drop-off Detail by Step</div>
-            {[
-              { step: "Insurance Upload", count: 82, reason: "OCR failure / timeout", severity: "high" },
-              { step: "Order", count: 70, reason: "Card declined", severity: "high" },
-              { step: "Product Selection", count: 63, reason: "No action / bounce", severity: "med" },
-              { step: "Contact Info", count: 54, reason: "Consent not accepted", severity: "med" },
-              { step: "Product Review & Resupply Cadence", count: 44, reason: "Missing Rx fields", severity: "med" },
-              { step: "Shipping", count: 36, reason: "Non-serviceable region", severity: "low" },
-              { step: "Order", count: 21, reason: "3DS abandoned", severity: "low" },
-            ].map((d, i) => (
-              <div key={i} style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(180px, 1fr) 1fr 50px",
-                gap: 8,
-                padding: "8px 0",
-                borderBottom: "1px solid #e2e8f0",
-                alignItems: "center",
-              }}>
-                <div>
-                  <div style={{fontSize: 10, color: "#475569"}}>{d.step}</div>
-                  <div style={{fontSize: 9, color: "#64748b", marginTop: 2}}>{d.reason}</div>
-                </div>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{
-                    width: `${(d.count/82)*100}%`,
-                    background: d.severity === "high" ? "#dc2626" : d.severity === "med" ? "#d97706" : "#2563eb",
-                  }} />
-                </div>
-                <div style={{
-                  textAlign: "right",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: d.severity === "high" ? "#dc2626" : d.severity === "med" ? "#d97706" : "#2563eb",
-                }}>{d.count}</div>
+              <h2 className="text-xl font-bold text-zinc-900 mb-2">Analyzing your image</h2>
+              <p className="text-zinc-500 text-sm leading-relaxed transition-all duration-500 min-h-[40px]">
+                {ANALYZING_MESSAGES[analyzeMessageIndex]}
+              </p>
+              <div className="mt-6 flex items-center justify-center gap-1.5">
+                {ANALYZING_MESSAGES.map((_, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'h-1 rounded-full transition-all duration-500',
+                      i === analyzeMessageIndex ? 'w-6 bg-violet-600' : 'w-1.5 bg-zinc-300'
+                    )}
+                  />
+                ))}
               </div>
-            ))}
-
-            {/* Salesforce Sync Status */}
-            <div className="section-header" style={{marginTop: 20}}>Salesforce Sync Status</div>
-            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8}}>
-              {[
-                { label: "Leads Created", val: "1,104", color: "#4f7cff" },
-                { label: "Opps Converted", val: "361", color: "#22c55e" },
-                { label: "Sync Errors", val: "3", color: "#ef4444" },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 6,
-                  padding: "10px 12px",
-                  textAlign: "center",
-                }}>
-                  <div style={{fontWeight: 600, fontSize: 20, color: s.color}}>{s.val}</div>
-                  <div style={{fontSize: 9, color: "#64748b", marginTop: 4, letterSpacing: "0.08em"}}>{s.label.toUpperCase()}</div>
-                </div>
-              ))}
+              <div className="mt-8 flex items-center justify-center gap-2 text-xs text-zinc-400">
+                <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-pulse" />
+                Powered by Claude AI · Avg. 15–30 seconds
+              </div>
             </div>
           </div>
-          )}
+        )}
 
-          {/* SESSIONS placeholder */}
-          {activeTab === "SESSIONS" && (
-          <div className="card" style={{padding: "24px", textAlign: "center", color: "#64748b"}}>
-            <div style={{fontSize: 14, marginBottom: 8}}>Session analytics</div>
-            <div style={{fontSize: 11}}>Session data will appear here when connected to your analytics source.</div>
-          </div>
-          )}
+        {/* Results Step */}
+        {step === 'results' && result && imageUrl && (
+          <ResultsView
+            result={result}
+            imageUrl={imageUrl}
+            selectedMarkets={selectedMarkets}
+            selectedSpecs={selectedSpecs}
+            onReset={handleReset}
+          />
+        )}
+      </main>
 
-          {/* SALESFORCE SYNC - standalone view */}
-          {activeTab === "SALESFORCE SYNC" && (
-          <div className="card" style={{padding: "24px"}}>
-            <div className="section-header">Salesforce Sync Status</div>
-            <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12}}>
-              {[
-                { label: "Leads Created", val: "1,104", color: "#4f7cff" },
-                { label: "Opps Converted", val: "361", color: "#22c55e" },
-                { label: "Sync Errors", val: "3", color: "#ef4444" },
-              ].map(s => (
-                <div key={s.label} style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 6,
-                  padding: "16px",
-                  textAlign: "center",
-                }}>
-                  <div style={{fontWeight: 600, fontSize: 24, color: s.color}}>{s.val}</div>
-                  <div style={{fontSize: 10, color: "#64748b", marginTop: 6, letterSpacing: "0.08em"}}>{s.label.toUpperCase()}</div>
-                </div>
-              ))}
+      {/* Footer */}
+      <footer className="border-t border-zinc-200 mt-16">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-violet-600 rounded flex items-center justify-center">
+              <Globe className="w-3 h-3 text-white" />
             </div>
+            <span className="text-xs font-semibold text-zinc-500">LocalizeIQ</span>
           </div>
-          )}
+          <p className="text-xs text-zinc-400">
+            AI localization engine · Firefly-ready · DAM-connectable
+          </p>
         </div>
-
-        {/* Footer */}
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "10px 0",
-          borderTop: "1px solid #e2e8f0",
-          fontSize: 9,
-          color: "#94a3b8",
-          letterSpacing: "0.08em",
-        }}>
-          <span>MINIMED ECOMMERCE · EVENT LOG v1.0 · DAY ONE OPS</span>
-          <span style={{display: "flex", gap: 16}}>
-            <span>● Amplitude</span>
-            <span>● Tealium</span>
-            <span>● Salesforce</span>
-            <span style={{color: "#16a34a"}}>● Fresh Paint HIPAA</span>
-          </span>
-          <span>AUTO-REFRESH: 30s</span>
-        </div>
-      </div>
+      </footer>
     </div>
-  );
+  )
 }

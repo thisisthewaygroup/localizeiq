@@ -1,0 +1,86 @@
+import type { Market } from './types'
+
+export const MARKETS: Market[] = [
+  {
+    id: 'us',
+    name: 'United States',
+    region: 'North America',
+    flag: '🇺🇸',
+    language: 'English',
+    languageCode: 'en-US',
+  },
+  {
+    id: 'jp',
+    name: 'Japan',
+    region: 'Asia Pacific',
+    flag: '🇯🇵',
+    language: 'Japanese',
+    languageCode: 'ja-JP',
+  },
+  {
+    id: 'gb',
+    name: 'United Kingdom',
+    region: 'Europe',
+    flag: '🇬🇧',
+    language: 'English',
+    languageCode: 'en-GB',
+  },
+  {
+    id: 'fr',
+    name: 'France',
+    region: 'Europe',
+    flag: '🇫🇷',
+    language: 'French',
+    languageCode: 'fr-FR',
+  },
+  {
+    id: 'de',
+    name: 'Germany',
+    region: 'Europe',
+    flag: '🇩🇪',
+    language: 'German',
+    languageCode: 'de-DE',
+  },
+  {
+    id: 'br',
+    name: 'Brazil',
+    region: 'Latin America',
+    flag: '🇧🇷',
+    language: 'Portuguese',
+    languageCode: 'pt-BR',
+  },
+  {
+    id: 'au',
+    name: 'Australia',
+    region: 'Asia Pacific',
+    flag: '🇦🇺',
+    language: 'English',
+    languageCode: 'en-AU',
+  },
+  {
+    id: 'kr',
+    name: 'South Korea',
+    region: 'Asia Pacific',
+    flag: '🇰🇷',
+    language: 'Korean',
+    languageCode: 'ko-KR',
+  },
+  {
+    id: 'in',
+    name: 'India',
+    region: 'Asia Pacific',
+    flag: '🇮🇳',
+    language: 'Hindi / English',
+    languageCode: 'hi-IN',
+  },
+  {
+    id: 'cn',
+    name: 'China',
+    region: 'Asia Pacific',
+    flag: '🇨🇳',
+    language: 'Mandarin',
+    languageCode: 'zh-CN',
+  },
+]
+
+export const getMarketById = (id: string) => MARKETS.find((m) => m.id === id)
