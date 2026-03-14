@@ -103,7 +103,7 @@ Be specific, actionable, and culturally accurate. For Japanese market especially
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [
         {
           role: 'user',
@@ -132,8 +132,11 @@ Be specific, actionable, and culturally accurate. For Japanese market especially
 
     // Clean the response - remove any markdown code blocks if present
     let jsonText = textContent.text.trim()
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
+    const fenceMatch = jsonText.match(/```(?:json)?\n?([\s\S]*?)\n?```/)
+    if (fenceMatch) {
+      jsonText = fenceMatch[1].trim()
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```(?:json)?\n?/, '').trim()
     }
 
     const result = JSON.parse(jsonText)
