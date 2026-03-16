@@ -103,7 +103,7 @@ Be specific, actionable, and culturally accurate. For Japanese market especially
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 16000,
       messages: [
         {
           role: 'user',
@@ -132,11 +132,23 @@ Be specific, actionable, and culturally accurate. For Japanese market especially
 
     // Clean the response - remove any markdown code blocks if present
     let jsonText = textContent.text.trim()
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
+    const fenceMatch = jsonText.match(/```(?:json)?\n?([\s\S]*?)\n?```/)
+    if (fenceMatch) {
+      jsonText = fenceMatch[1].trim()
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```(?:json)?\n?/, '').trim()
     }
 
-    const result = JSON.parse(jsonText)
+    let result
+    try {
+      result = JSON.parse(jsonText)
+    } catch (parseError) {
+      console.error('JSON parse error. Stop reason:', response.stop_reason, 'Response length:', jsonText.length)
+      if (response.stop_reason === 'max_tokens') {
+        throw new Error('Response was too large and got cut off. Try selecting fewer markets or specs.')
+      }
+      throw parseError
+    }
     return NextResponse.json(result)
   } catch (error) {
     console.error('Analysis error:', error)
